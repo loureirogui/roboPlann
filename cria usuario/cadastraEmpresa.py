@@ -100,12 +100,65 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
     
     url = 'https://app.acessorias.com/sysmain.php?m=4'
     edge_driver.get(url)
-
+    
     try:
         # Executa o script JavaScript para chamar a função addEmp(this)
         edge_driver.execute_script("addEmp(this);")
     except Exception as e:
         print("Erro ao chamar a função addEmp(this):", e)
+    
+    try:
+        while True:
+            # Encontra o seletor <select> pelo nome
+            selectGrupoEmpresa = WebDriverWait(edge_driver, 10).until(
+                EC.visibility_of_element_located((By.NAME, 'field_EmpEgpID'))
+            )
+
+            # Cria uma instância de Select com o elemento encontrado
+            select = Select(selectGrupoEmpresa)  
+            grupo_normalized = normalize_text(GrupoEmpresa)
+            option_found = False  # Flag para controlar se a opção foi encontrada
+            
+            # Itera através das opções para encontrar aquela cujo texto é igual ao valor da variável grupo empresa
+            for option in select.options:
+                option_normalized = normalize_text(option.text)
+                if option_normalized == grupo_normalized:
+                    select.select_by_visible_text(option.text)
+                    option_found = True
+                    break
+            
+            if option_found:
+                break  # Sai do loop principal se a opção foi encontrada
+            
+            else:
+                print(f"Opção '{grupo_normalized}' não encontrada, então vou tentar criar um por aqui")
+                url = 'https://app.acessorias.com/sysmain.php?m=146&act=a'
+                edge_driver.get(url)
+                
+                try:
+                    # Espera o campo aparecer
+                    NomeGrupoCriar = WebDriverWait(edge_driver, 10).until(
+                        EC.visibility_of_element_located((By.NAME, 'EgpNome'))
+                    )
+                    
+                    # Insere o Apelido no campo
+                    NomeGrupoCriar.send_keys(GrupoEmpresa)
+                except Exception as e:
+                    print(f"Erro ao inserir o nome do grupo: {e}")
+                
+                edge_driver.execute_script("check_form(this);")
+                # Volta para a página original onde o select está localizado
+                edge_driver.get('https://app.acessorias.com/sysmain.php?m=4')
+                time.sleep(1)
+                try:
+                    # Executa o script JavaScript para chamar a função addEmp(this)
+                    edge_driver.execute_script("addEmp(this);")
+                except Exception as e:
+                    print("Erro ao chamar a função addEmp(this):", e)
+    except Exception as e:
+        print(f"Erro: {e}")
+    
+    
 
     #inserir cnpj
     try:
@@ -168,30 +221,6 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
     except:
         print(" ")
 
-
-    try:
-        # Encontra o seletor <select> pelo nome
-        selectGrupoEmpresa = WebDriverWait(edge_driver, 10).until(
-            EC.visibility_of_element_located((By.NAME, 'field_EmpEgpID'))
-        )
-
-        # Cria uma instância de Select com o elemento encontrado
-        select = Select(selectGrupoEmpresa)  
-        grupo_normalized = normalize_text(GrupoEmpresa)
-        # Itera através das opções para encontrar aquela cujo texto é igual ao valor da variável grupo empresa
-        for option in select.options:
-            option_normalized = normalize_text(option.text)
-            if option_normalized == grupo_normalized:
-                select.select_by_visible_text(option.text)
-                break
-            
-            else:
-                print(f"Opção '{grupo_normalized}' não encontrada")
-
-    except Exception as e:
-        print(f"Erro: {e}")
-
-
     if RazaoSocial:
         try:
             # Espera o campo de IE da empresa aparecer
@@ -242,7 +271,6 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
         tagIconElement.click()
 
     if tagContabil:
-        print(tagContabil)
         try:
             tagInput = WebDriverWait(edge_driver, 10).until(
                 EC.visibility_of_element_located((By.CLASS_NAME, 'tt-input'))
@@ -251,10 +279,9 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
             tagInput.send_keys(Keys.ENTER)
             time.sleep(0.5)
         except:
-            print("deu ruim parsa")
+            print("erro ao incluir a tag" + tagContabil + 'na empresa de cnpj: ' + Cnpj)
 
     if tagFiscal:
-        print(tagFiscal)
         try:
             tagInput = WebDriverWait(edge_driver, 10).until(
                 EC.visibility_of_element_located((By.CLASS_NAME, 'tt-input'))
@@ -263,7 +290,7 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
             tagInput.send_keys(Keys.ENTER)
             time.sleep(0.5)
         except:
-            print("deu ruim parsa")
+            print("erro ao incluir a tag" + tagFiscal + 'na empresa de cnpj: ' + Cnpj)
 
     if tagDP:
         print(tagDP)
@@ -275,7 +302,7 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
             tagInput.send_keys(Keys.ENTER)
             time.sleep(0.5)
         except:
-            print("deu ruim parsa")
+            print("erro ao incluir a tag " + tagDP + 'na empresa de cnpj: ' + Cnpj)
 
     try:
         # Espera o botão de salvar aparecer
@@ -290,8 +317,7 @@ for row in sheet.iter_rows(min_row=2, min_col=1, max_col=7):  # E aqui
         print('se eu quisesse salvar')
         time.sleep(2)
     except Exception as e:
-        print("Erro ao clicar no botão de salvar:", e)
+        print("Não consegui cadastrar a empresa de CNPJ: " + Cnpj)
         
-    teste=input('breakpoint')
     
 edge_driver.quit()
